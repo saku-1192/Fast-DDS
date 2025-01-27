@@ -73,6 +73,10 @@ set(${PROJECT_NAME}_source_files
     fastdds/publisher/qos/DataWriterQos.cpp
     fastdds/publisher/qos/PublisherQos.cpp
     fastdds/publisher/qos/WriterQos.cpp
+    fastdds/rpc/Replier.cpp
+    fastdds/rpc/Requester.cpp
+    fastdds/rpc/Service.cpp
+    fastdds/rpc/ServiceTypeSupport.cpp
     fastdds/subscriber/DataReader.cpp
     fastdds/subscriber/DataReaderImpl.cpp
     fastdds/subscriber/history/DataReaderHistory.cpp
