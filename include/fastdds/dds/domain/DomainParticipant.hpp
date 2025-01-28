@@ -410,6 +410,15 @@ public:
             const std::string& service_type_name);
 
     /**
+     * Delete a registered RPC service
+     * 
+     * @param service Pointer to the service to be deleted.
+     * @return RETCODE_OK if the service was deleted, RETCODE_PRECONDITION_NOT_MET if service was not found, RETCODE_BAD_PARAMETER if service is nullptr.
+     */
+    FASTDDS_EXPORTED_API ReturnCode_t delete_service(
+            const rpc::Service* service);
+
+    /**
      * Create a RPC Requester in a given Service.
      * 
      * @param service Pointer to a service object where the requester will be created.

@@ -268,6 +268,12 @@ rpc::Service* DomainParticipant::create_service(
     return impl_->create_service(service_name, service_type_name);
 }
 
+ReturnCode_t DomainParticipant::delete_service(
+        const rpc::Service* service)
+{
+    return impl_->delete_service(service);
+}
+
 rpc::Requester* DomainParticipant::create_service_requester(
         rpc::Service* service,
         const RequesterQos& requester_qos)

@@ -2016,6 +2016,28 @@ rpc::Service* DomainParticipantImpl::create_service(
     return service;
 }
 
+ReturnCode_t DomainParticipantImpl::delete_service(
+        const rpc::Service* service)
+{
+    if (nullptr == service)
+    {
+        return RETCODE_BAD_PARAMETER;
+    }
+
+    std::lock_guard<std::mutex> lock(mtx_services_);
+    auto it = services_.find(service->get_service_name());
+
+    if (it != services_.end())
+    {
+        delete it->second;
+        services_.erase(it);
+        return RETCODE_OK;
+    }
+
+    // The service was not found in this participant
+    return RETCODE_PRECONDITION_NOT_MET;
+}
+
 rpc::Requester* DomainParticipantImpl::create_service_requester(
         rpc::Service* service,
         const RequesterQos& qos)

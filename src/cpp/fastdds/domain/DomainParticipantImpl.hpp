@@ -351,6 +351,9 @@ public:
             const std::string& service_name,
             const std::string& service_type_name);
 
+    ReturnCode_t delete_service(
+            const rpc::Service* service);
+
     /**
      * Create a RPC Requester in a given Service.
      * 
