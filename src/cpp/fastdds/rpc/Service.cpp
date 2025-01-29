@@ -71,6 +71,34 @@ Service::~Service()
     participant_ = nullptr;
 }
 
+Requester* Service::create_requester_instance(
+        const RequesterParams& params)
+{
+    try
+    {
+        return new Requester(this, params);
+    }
+    catch (const std::exception& e)
+    {
+        EPROSIMA_LOG_ERROR(SERVICE, "Error creating Requester instance: " << e.what());
+        return nullptr;
+    }
+}
+
+Replier* Service::create_replier_instance(
+        const ReplierParams& params)
+{
+    try
+    {
+        return new Replier(this, params);
+    }
+    catch (const std::exception& e)
+    {
+        EPROSIMA_LOG_ERROR(SERVICE, "Error creating Replier instance: " << e.what());
+        return nullptr;
+    }
+}
+
 Requester* Service::create_requester(
         const RequesterParams& params)
 {
@@ -80,7 +108,11 @@ Requester* Service::create_requester(
         return nullptr;
     }
     
-    Requester* requester = new Requester(this, params);
+    Requester* requester = create_requester_instance(params);
+    if (!requester)
+    {
+        return nullptr;
+    }
 
     // Check that all requester dds entities are correctly created
     if (!requester->is_valid())
@@ -108,7 +140,11 @@ Replier* Service::create_replier(
         return nullptr;
     }
 
-    Replier* replier = new Replier(this, params);
+    Replier* replier = create_replier_instance(params);
+    if (!replier)
+    {
+        return nullptr;
+    }
 
     // Check that all replier dds entities are correctly created
     if (!replier->is_valid())

@@ -123,6 +123,30 @@ protected:
         return validate_params(params, validate_qos);
     }
 
+    /**
+     * @brief Create a Requester instance with the given parameters. This method will be called internally by the public method create_requester
+     * This method is intended to be overriden by the user in case of custom Requester implementations
+     * @note This method ONLY instantiates the Requester object, there is no DDS entities/RequesterParams validation, which can lead to unexpected behavior if the created object is not valid
+     * To avoid this, use ALWAYS the public method create_requester to create a Requester.
+     * 
+     * @param params Requester configuration parameters
+     * @return reference to the created Requester object or nullptr if an error occurred
+     */
+    virtual Requester* create_requester_instance(
+            const RequesterParams& params);
+
+    /**
+     * @brief Create a Replier instance with the given parameters. This method will be called internally by the public method create_replier
+     * This method is intended to be overriden by the user in case of custom Replier implementations
+     * @note This method ONLY instantiates the Replier object, there is no DDS entities/ReplierParams validation, which can lead to unexpected behavior if the created object is not valid
+     * To avoid this, use ALWAYS the public method create_replier to create a Replier.
+     * 
+     * @param params Replier configuration parameters
+     * @return reference to the created Replier object or nullptr if an error occurred
+     */
+    virtual Replier* create_replier_instance(
+            const ReplierParams& params);
+
 public:
 
     /**
