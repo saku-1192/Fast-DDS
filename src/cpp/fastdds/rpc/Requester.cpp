@@ -32,8 +32,13 @@ namespace rpc {
 Requester::Requester(
         Service* service,
         const RequesterParams& params)
-        : qos_(params.qos()),
-        service_(service)
+        : requester_reader_(nullptr),
+        requester_writer_(nullptr),
+        requester_publisher_(nullptr),
+        requester_subscriber_(nullptr),
+        qos_(params.qos()),
+        service_(service),
+        valid_(false)
 {
     // Create required DDS entities. If any of them fails, the requester is not valid
     ReturnCode_t retcode = create_dds_entities(params);
@@ -120,7 +125,7 @@ ReturnCode_t Requester::create_dds_entities(const RequesterParams& params)
         return RETCODE_ERROR;
     }
 
-    requester_writer_ = requester_publisher_->create_datawriter(service_->request_topic_, params.qos().writer_qos, nullptr, StatusMask::none());
+    requester_writer_ = requester_publisher_->create_datawriter(service_->request_topic_, params.qos().writer_qos, this, StatusMask::all());
 
     if (!requester_writer_)
     {
@@ -137,7 +142,7 @@ ReturnCode_t Requester::create_dds_entities(const RequesterParams& params)
         return RETCODE_ERROR;
     }
 
-    requester_reader_ = requester_subscriber_->create_datareader(service_->reply_filtered_topic_, params.qos().reader_qos, nullptr, StatusMask::none());
+    requester_reader_ = requester_subscriber_->create_datareader(service_->reply_filtered_topic_, params.qos().reader_qos, this, StatusMask::all());
 
     if (!requester_reader_)
     {
@@ -146,7 +151,6 @@ ReturnCode_t Requester::create_dds_entities(const RequesterParams& params)
     }
 
     return RETCODE_OK;
-
 }
 
 } // namespace rpc

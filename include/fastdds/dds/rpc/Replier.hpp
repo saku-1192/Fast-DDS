@@ -20,7 +20,9 @@
 #include <fastdds/dds/core/LoanableSequence.hpp>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/qos/ReplierQos.hpp>
+#include <fastdds/dds/publisher/DataWriterListener.hpp>
 #include <fastdds/dds/publisher/Publisher.hpp>
+#include <fastdds/dds/subscriber/DataReaderListener.hpp>
 #include <fastdds/dds/subscriber/Subscriber.hpp>
 
 #include "ReplierParams.hpp"
@@ -38,7 +40,7 @@ class Service;
 /**
  * @brief Class that represents a replier entity in the RPC communication.
  */
-class Replier : public RPCEntity
+class Replier : public RPCEntity, public DataWriterListener, public DataReaderListener
 {
 
 friend class Service;

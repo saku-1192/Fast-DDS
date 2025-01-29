@@ -23,6 +23,8 @@
 #include <fastdds/dds/subscriber/DataReader.hpp>
 #include <fastdds/dds/subscriber/SampleInfo.hpp>
 #include <fastdds/dds/subscriber/Subscriber.hpp>
+#include <fastdds/dds/publisher/DataWriterListener.hpp>
+#include <fastdds/dds/subscriber/DataReaderListener.hpp>
 #include <fastdds/rtps/common/SampleIdentity.hpp>
 
 #include "RequesterParams.hpp"
@@ -40,7 +42,7 @@ class Service;
 /**
  * @brief Class that represents a requester entity in the RPC communication.
  */
-class Requester : public RPCEntity
+class Requester : public RPCEntity, public DataWriterListener, public DataReaderListener
 {
 
 friend class Service;

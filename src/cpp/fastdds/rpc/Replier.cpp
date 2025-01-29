@@ -32,8 +32,13 @@ namespace rpc {
 Replier::Replier(
         Service* service,
         const ReplierParams& params)
-        : qos_(params.qos()),
-        service_(service)
+        : replier_reader_(nullptr),
+        replier_writer_(nullptr),
+        replier_publisher_(nullptr),
+        replier_subscriber_(nullptr),
+        qos_(params.qos()),
+        service_(service),
+        valid_(false)
 {
     // Create required DDS entities. If any of them fails, the replier is not valid
     ReturnCode_t retcode = create_dds_entities(params);
@@ -102,7 +107,7 @@ ReturnCode_t Replier::create_dds_entities(const ReplierParams& params)
         return RETCODE_ERROR;
     }
 
-    replier_writer_ = replier_publisher_->create_datawriter(service_->reply_topic_, params.qos().writer_qos, nullptr, StatusMask::none());
+    replier_writer_ = replier_publisher_->create_datawriter(service_->reply_topic_, params.qos().writer_qos, this, StatusMask::all());
 
     if (!replier_writer_)
     {
@@ -119,7 +124,7 @@ ReturnCode_t Replier::create_dds_entities(const ReplierParams& params)
         return RETCODE_ERROR;
     }
 
-    replier_reader_ = replier_subscriber_->create_datareader(service_->request_filtered_topic_, params.qos().reader_qos, nullptr, StatusMask::none());
+    replier_reader_ = replier_subscriber_->create_datareader(service_->request_filtered_topic_, params.qos().reader_qos, this, StatusMask::all());
 
     if (!replier_reader_)
     {

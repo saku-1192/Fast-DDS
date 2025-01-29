@@ -74,13 +74,6 @@ Service::~Service()
 Requester* Service::create_requester(
         const RequesterParams& params)
 {
-    // Check if the service is enabled
-    if (!enable_)
-    {
-        EPROSIMA_LOG_ERROR(SERVICE, "Service is not enabled.");
-        return nullptr;
-    }
-
     // Check if parameters are valid
     if (!validate_params(params))
     {
@@ -109,13 +102,6 @@ Requester* Service::create_requester(
 Replier* Service::create_replier(
         const ReplierParams& params)
 {
-    // Check if the service is enabled
-    if (!enable_)
-    {
-        EPROSIMA_LOG_ERROR(SERVICE, "Service is not enabled.");
-        return nullptr;
-    }
-
     // Check if parameters are valid
     if (!validate_params(params))
     {

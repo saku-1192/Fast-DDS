@@ -62,19 +62,9 @@ public:
         qos_ = qos;
     }
 
-    /**
-     * @brief Setter for Replier QoS
-     * 
-     * @return Reference to the qos_ member
-     */
-    ReplierQos& qos()
-    {
-        return qos_;
-    }
-
 private:
+
     ReplierQos qos_;
-    // TODO (Carlosespicur) Add here Replier Listeners?
 };
 } // namespace rpc
 } // namespace dds

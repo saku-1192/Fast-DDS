@@ -57,14 +57,14 @@ public:
      * @brief Setter for Requester QoS
      */
     void qos(
-            const dds::RequesterQos& qos)
+            const RequesterQos& qos)
     {
         qos_ = qos;
     }
 
 private:
-    dds::RequesterQos qos_;
-    // TODO (Carlosespicur) Add here Requester Listeners when implemented
+
+    RequesterQos qos_;
 };
 } // namespace rpc
 } // namespace dds
