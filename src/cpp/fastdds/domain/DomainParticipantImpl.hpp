@@ -33,6 +33,7 @@
 #include <fastdds/dds/domain/qos/ReplierQos.hpp>
 #include <fastdds/dds/domain/qos/RequesterQos.hpp>
 #include <fastdds/dds/publisher/qos/PublisherQos.hpp>
+#include <fastdds/dds/rpc/IServiceFactory.hpp>
 #include <fastdds/dds/rpc/Replier.hpp>
 #include <fastdds/dds/rpc/Requester.hpp>
 #include <fastdds/dds/rpc/Service.hpp>
@@ -350,6 +351,20 @@ public:
     rpc::Service* create_service(
             const std::string& service_name,
             const std::string& service_type_name);
+
+    /**
+     * Create a RPC service from a factory. It can be used to create custom services (i.e: with custom Requester/Replier classes) that inherit from rpc::Service base class
+     * 
+     * @param factory Pointer to the factory that will create the service.
+     * @param service_name Name of the service.
+     * @param service_type_name Type name of the service (Request & reply types)
+     * 
+     * @return Pointer to the created service. nullptr in error case.
+     */
+    rpc::Service* create_service_from_factory(
+            rpc::IServiceFactory* service_factory,
+            const std::string& service_name,
+            const std::string& service_type_name); 
 
     ReturnCode_t delete_service(
             const rpc::Service* service);

@@ -268,6 +268,14 @@ rpc::Service* DomainParticipant::create_service(
     return impl_->create_service(service_name, service_type_name);
 }
 
+rpc::Service* DomainParticipant::create_service_from_factory(
+        rpc::IServiceFactory* service_factory,
+        const std::string& service_name,
+        const std::string& service_type_name)
+{
+    return impl_->create_service_from_factory(service_factory, service_name, service_type_name);
+}
+
 ReturnCode_t DomainParticipant::delete_service(
         const rpc::Service* service)
 {

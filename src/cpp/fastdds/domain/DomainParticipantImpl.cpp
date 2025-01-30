@@ -194,6 +194,20 @@ void DomainParticipantImpl::disable()
 DomainParticipantImpl::~DomainParticipantImpl()
 {
     {
+        std::lock_guard<std::mutex> lock(mtx_services_);
+        for (auto service_it = services_.begin(); service_it != services_.end(); ++service_it)
+        {
+            delete service_it->second;
+        }
+        services_.clear();
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mtx_service_types_);
+        service_types_.clear();
+    }
+
+    {
         std::lock_guard<std::mutex> lock(mtx_pubs_);
         for (auto pub_it = publishers_.begin(); pub_it != publishers_.end(); ++pub_it)
         {
@@ -2001,6 +2015,72 @@ rpc::Service* DomainParticipantImpl::create_service(
 
     // Create and store the service (Internally, this will create the required DDS Request/Reply Topics))
     rpc::Service* service = new rpc::Service(service_name, service_type_name, this);
+
+    if (service->is_valid())
+    {
+        std::lock_guard<std::mutex> lock(mtx_services_);
+        services_[service_name] = service;
+    }
+    else
+    {
+        delete service;
+        service = nullptr;
+    }
+
+    return service;
+}
+
+rpc::Service* DomainParticipantImpl::create_service_from_factory(
+        rpc::IServiceFactory* service_factory,
+        const std::string& service_name,
+        const std::string& service_type_name)
+{
+    if (service_name.empty())
+    {
+        EPROSIMA_LOG_ERROR(PARTICIPANT, "Service name cannot be empty.");
+        return nullptr;
+    }
+
+    if (service_type_name.empty())
+    {
+        EPROSIMA_LOG_ERROR(PARTICIPANT, "Service type name cannot be empty.");
+        return nullptr;
+    }
+
+    // Check if the service has already been created
+    {
+        std::lock_guard<std::mutex> lock(mtx_services_);
+        auto it = services_.find(service_name);
+
+        if (it != services_.end())
+        {
+            EPROSIMA_LOG_ERROR(PARTICIPANT, "Service with name '" << service_name << "' already exists.");
+            return nullptr;
+        }
+    }
+
+    // Check if the request/reply content filter factory is registered. If not, register it.
+    IContentFilterFactory* factory = find_content_filter_factory("REQUEST_REPLY_CONTENT_FILTER");
+
+    if (nullptr == factory)
+    {
+        factory = new rpc::RequestReplyContentFilterFactory();
+        ReturnCode_t ret_code = register_content_filter_factory("REQUEST_REPLY_CONTENT_FILTER", factory);
+
+        if (RETCODE_OK != ret_code)
+        {
+            EPROSIMA_LOG_ERROR(PARTICIPANT, "Error registering Request/Reply Content Filter Factory.");
+            return nullptr;
+        }
+    }
+
+    // Create and store the service (Internally, this will create the required DDS Request/Reply Topics))
+    rpc::Service* service = service_factory->create_service_instance(service_name, service_type_name, this);
+
+    if (nullptr == service)
+    {
+        return nullptr;
+    }
 
     if (service->is_valid())
     {
