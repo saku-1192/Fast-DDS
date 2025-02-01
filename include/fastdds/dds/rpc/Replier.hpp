@@ -23,6 +23,7 @@
 #include <fastdds/dds/publisher/DataWriterListener.hpp>
 #include <fastdds/dds/publisher/Publisher.hpp>
 #include <fastdds/dds/subscriber/DataReaderListener.hpp>
+#include <fastdds/dds/subscriber/SampleInfo.hpp>
 #include <fastdds/dds/subscriber/Subscriber.hpp>
 
 #include "ReplierParams.hpp"
@@ -106,9 +107,36 @@ public:
     /**
      * @brief Check if the replier is valid (i.e: all DDS entities are correctly created)
      */
-    bool is_valid() const
+    inline bool is_valid() const
     {
         return valid_;
+    }
+
+    // Getters for all DDS entities
+    inline void get_replier_writer(DataWriter*& writer) const
+    {
+        writer = replier_writer_;
+    }
+
+    inline void get_replier_reader(DataReader*& reader) const
+    {
+        reader = replier_reader_;
+    }
+
+    inline void get_replier_publisher(Publisher*& publisher) const
+    {
+        publisher = replier_publisher_;
+    }
+
+    inline void get_replier_subscriber(Subscriber*& subscriber) const
+    {
+        subscriber = replier_subscriber_;
+    }
+
+    // Getter for associated service
+    inline void get_service(Service*& service) const
+    {
+        service = service_;
     }
 
 protected:

@@ -31,12 +31,6 @@
 #include <fastdds/dds/core/ReturnCode.hpp>
 #include <fastdds/dds/core/status/StatusMask.hpp>
 #include <fastdds/dds/domain/qos/DomainParticipantQos.hpp>
-#include <fastdds/dds/domain/qos/ReplierQos.hpp>
-#include <fastdds/dds/domain/qos/RequesterQos.hpp>
-#include <fastdds/dds/rpc/IServiceFactory.hpp>
-#include <fastdds/dds/rpc/Replier.hpp>
-#include <fastdds/dds/rpc/Requester.hpp>
-#include <fastdds/dds/rpc/Service.hpp>
 #include <fastdds/dds/rpc/ServiceTypeSupport.hpp>
 #include <fastdds/dds/topic/ContentFilteredTopic.hpp>
 #include <fastdds/dds/topic/IContentFilterFactory.hpp>
@@ -64,6 +58,7 @@ namespace rpc {
 class Requester;
 class Replier;
 class Service;
+class IServiceFactory;
 } // namespace rpc
 
 class DomainParticipantImpl;
@@ -71,6 +66,8 @@ class DomainParticipantListener;
 class Publisher;
 class PublisherQos;
 class PublisherListener;
+class ReplierQos;
+class RequesterQos;
 class Subscriber;
 class SubscriberQos;
 class SubscriberListener;

@@ -113,6 +113,33 @@ public:
         return valid_;
     }
 
+    // Getters for all DDS entities
+    inline void get_requester_writer(DataWriter*& writer) const
+    {
+        writer = requester_writer_;
+    }
+
+    inline void get_requester_reader(DataReader*& reader) const
+    {
+        reader = requester_reader_;
+    }
+
+    inline void get_requester_publisher(Publisher*& publisher) const
+    {
+        publisher = requester_publisher_;
+    }
+
+    inline void get_requester_subscriber(Subscriber*& subscriber) const
+    {
+        subscriber = requester_subscriber_;
+    }
+
+    // Getter for associated service
+    inline void get_service(Service*& service) const
+    {
+        service = service_;
+    }
+
 protected:
     DataReader* requester_reader_;
     DataWriter* requester_writer_;
