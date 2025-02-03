@@ -45,6 +45,13 @@
 #include <fastdds/subscriber/SubscriberImpl.hpp>
 #include <fastdds/topic/TopicImpl.hpp>
 #include <fastdds/topic/TopicProxy.hpp>
+#include <fastdds/dds/rpc/ServiceTypeSupport.hpp>
+#include <fastdds/dds/rpc/Service.hpp>
+#include <fastdds/dds/rpc/Requester.hpp>
+#include <fastdds/dds/rpc/Replier.hpp>
+#include <fastdds/dds/rpc/IServiceFactory.hpp>
+#include <fastdds/dds/domain/qos/RequesterQos.hpp>
+#include <fastdds/dds/domain/qos/ReplierQos.hpp>
 
 #include <fastdds/builtin/type_lookup_service/TypeLookupManager.hpp>
 #include <rtps/resources/ResourceEvent.h>
@@ -379,6 +386,36 @@ public:
 
     MOCK_METHOD1(ignore_participant, bool (
                 const fastdds::rtps::InstanceHandle_t& handle));
+
+    MOCK_METHOD1(find_service_type, rpc::ServiceTypeSupport(
+                const std::string& service_name));
+
+    MOCK_METHOD2(register_service_type, ReturnCode_t(
+                rpc::ServiceTypeSupport service_type,
+                const std::string& service_type_name));
+    
+    MOCK_METHOD1(unregister_service_type, ReturnCode_t(
+                const std::string& service_name));
+
+    MOCK_METHOD2(create_service, rpc::Service * (
+                const std::string& service_name,
+                const std::string& service_type_name));
+
+    MOCK_METHOD3(create_service_from_factory, rpc::Service * (
+                rpc::IServiceFactory* service_factory,
+                const std::string& service_name,
+                const std::string& service_type_name));
+
+    MOCK_METHOD1(delete_service, ReturnCode_t(
+                const rpc::Service* service));
+    
+    MOCK_METHOD2(create_service_requester, rpc::Requester * (
+                rpc::Service* service,
+                const RequesterQos& requester_qos));
+
+    MOCK_METHOD2(create_service_replier, rpc::Replier * (
+                rpc::Service* service,
+                const ReplierQos& replier_qos));
 
 
     TopicDescription* lookup_topicdescription(

@@ -12,17 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
+#include <fastdds/dds/rpc/Replier.hpp>
+#include <fastdds/dds/rpc/ReplierParams.hpp>
+#include <fastdds/dds/rpc/Requester.hpp>
+#include <fastdds/dds/rpc/RequesterParams.hpp>
+#include <fastdds/dds/rpc/Service.hpp>
 #include <fastdds/LibrarySettings.hpp>
 #include <fastdds/rtps/common/CDRMessage_t.hpp>
 #include <fastdds/rtps/transport/test_UDPv4TransportDescriptor.hpp>
+
 #include <gtest/gtest.h>
 
 #include "BlackboxTests.hpp"
 #include "PubSubReader.hpp"
 #include "PubSubWriter.hpp"
-#include "ReqRepAsReliableHelloWorldReplier.hpp"
-#include "ReqRepAsReliableHelloWorldRequester.hpp"
+#include "../api/dds-pim/ReqRepHelloWorldReplier.hpp"
+#include "../api/dds-pim/ReqRepHelloWorldRequester.hpp"
+#include "../api/dds-pim/ReqRepHelloWorldService.hpp"
+#include "../api/dds-pim/ReqRepHelloWorldServiceFactory.hpp"
 
 using namespace eprosima::fastdds;
 
@@ -248,13 +257,30 @@ TEST_P(Volatile, AsyncVolatileKeepAllPubReliableSubNonReliableHelloWorld)
 // Regression test of Refs #3376, github ros2/rmw_fastrtps #226
 TEST_P(Volatile, ReqRepVolatileHelloworldRequesterCheckWriteParams)
 {
-    ReqRepAsReliableHelloWorldRequester requester;
+    std::unique_ptr<ReqRepHelloWorldServiceFactory> factory = std::make_unique<ReqRepHelloWorldServiceFactory>();
+    eprosima::fastdds::dds::DomainParticipant* participant = factory->create_service_participant();
+    ASSERT_NE(participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* service = participant->create_service_from_factory(
+        factory, factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = service->create_requester_params();
 
-    requester.durability_kind(eprosima::fastdds::dds::VOLATILE_DURABILITY_QOS).init();
+    requester_params.qos().writer_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
+    requester_params.qos().reader_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
+    // Increase default max_blocking_time to 1 second, as our CI infrastructure shows some
+    // big CPU overhead sometimes
+    requester_params.qos().writer_qos.reliability().max_blocking_time.seconds = 1;
+    requester_params.qos().writer_qos.reliability().max_blocking_time.nanosec = 0;
 
-    ASSERT_TRUE(requester.isInitialized());
+    requester_params.qos().writer_qos.durability().kind = eprosima::fastdds::dds::VOLATILE_DURABILITY_QOS;
+    requester_params.qos().reader_qos.durability().kind = eprosima::fastdds::dds::VOLATILE_DURABILITY_QOS;
+
+    eprosima::fastdds::dds::rpc::Requester* requester = participant->create_service_requester(service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
     requester.send(1);
+
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(participant);
 }
 
 // Test created to check bug #5423, github ros2/ros2 #703

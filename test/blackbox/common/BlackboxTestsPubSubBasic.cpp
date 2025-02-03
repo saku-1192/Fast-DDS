@@ -28,8 +28,6 @@
 #include "PubSubParticipant.hpp"
 #include "PubSubReader.hpp"
 #include "PubSubWriter.hpp"
-#include "ReqRepAsReliableHelloWorldReplier.hpp"
-#include "ReqRepAsReliableHelloWorldRequester.hpp"
 
 using namespace eprosima::fastdds;
 using namespace eprosima::fastdds::rtps;
@@ -262,26 +260,43 @@ TEST_P(PubSubBasic, AsyncPubSubAsReliableHelloworld)
 
 TEST_P(PubSubBasic, ReqRepAsReliableHelloworld)
 {
-    ReqRepAsReliableHelloWorldRequester requester;
-    ReqRepAsReliableHelloWorldReplier replier;
     const uint16_t nmsgs = 10;
 
-    requester.init();
+    std::unique_ptr<ReqRepHelloWorldServiceFactory> factory = std::make_unique<ReqRepHelloWorldServiceFactory>();
+    eprosima::fastdds::dds::DomainParticipant* participant = factory->create_service_participant();
+    ASSERT_NE(participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* service = participant->create_service_from_factory(
+        factory, factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = service->create_requester_params();
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = service->create_replier_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    requester_params.qos().writer_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
+    requester_params.qos().reader_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
+    replier_params.qos().writer_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
+    replier_params.qos().reader_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
+    // Increase default max_blocking_time to 1 second, as our CI infrastructure shows some
+    // big CPU overhead sometimes
+    requester_params.qos().writer_qos.reliability().max_blocking_time.seconds = 1;
+    requester_params.qos().writer_qos.reliability().max_blocking_time.nanosec = 0;
+    replier_params.qos().writer_qos.reliability().max_blocking_time.seconds = 1;
+    replier_params.qos().writer_qos.reliability().max_blocking_time.nanosec = 0;
 
-    replier.init();
+    eprosima::fastdds::dds::rpc::Requester* requester = participant->create_service_requester(service, requester_params.qos());
+    eprosima::fastdds::dds::rpc::Replier* replier = participant->create_service_replier(service, replier_params.qos());
+    ASSERT_NE(requester, nullptr);
+    ASSERT_NE(replier, nullptr);
 
-    requester.wait_discovery();
-    replier.wait_discovery();
-
-    ASSERT_TRUE(replier.isInitialized());
-
+    requester->wait_discovery();
+    replier->wait_discovery();
+    
     for (uint16_t count = 0; count < nmsgs; ++count)
     {
-        requester.send(count);
-        requester.block(std::chrono::seconds(5));
+        requester->send(count);
+        requester->block(std::chrono::seconds(5));
     }
+
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(participant);
 }
 
 TEST_P(PubSubBasic, PubSubAsReliableData64kb)

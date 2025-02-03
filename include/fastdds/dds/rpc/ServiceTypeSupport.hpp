@@ -80,6 +80,11 @@ public:
     }
 
     /**
+     * @brief Destructor
+     */
+    FASTDDS_EXPORTED_API virtual ~ServiceTypeSupport() = default;
+
+    /**
      * @brief Registers the service type on a participant
      *
      * @param participant DomainParticipant where the service type is going to be registered
@@ -115,7 +120,7 @@ public:
         return request_type_.empty() && reply_type_.empty();
     }
 
-    FASTDDS_EXPORTED_API virtual bool operator ==(
+    FASTDDS_EXPORTED_API bool operator ==(
             const ServiceTypeSupport& type_support)
     {
         TypeSupport request_type = type_support.request_type();

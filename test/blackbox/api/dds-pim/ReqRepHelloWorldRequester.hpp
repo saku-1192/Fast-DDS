@@ -20,196 +20,83 @@
 #ifndef _TEST_BLACKBOX_REQREPHELLOWORLDREQUESTER_HPP_
 #define _TEST_BLACKBOX_REQREPHELLOWORLDREQUESTER_HPP_
 
-#include "../../types/HelloWorldPubSubTypes.hpp"
+#include <fastdds/dds/rpc/Requester.hpp>
+#include <fastdds/rtps/common/SampleIdentity.hpp>
 
-#include <fastdds/dds/subscriber/DataReader.hpp>
-#include <fastdds/dds/subscriber/DataReaderListener.hpp>
-#include <fastdds/dds/subscriber/qos/DataReaderQos.hpp>
-#include <fastdds/dds/publisher/DataWriter.hpp>
-#include <fastdds/dds/publisher/DataWriterListener.hpp>
-#include <fastdds/dds/publisher/qos/DataWriterQos.hpp>
-#include <fastdds/dds/topic/TypeSupport.hpp>
+#include "../../types/HelloWorld.hpp"
 
-#include <list>
-#include <condition_variable>
-#include <asio.hpp>
-
-
-#if defined(_WIN32)
-#include <process.h>
-#define GET_PID _getpid
-#else
-#define GET_PID getpid
-#endif // if defined(_WIN32)
-
-namespace eprosima {
-namespace fastdds {
-namespace dds {
-class DomainParticipant;
-class Topic;
-class Subscriber;
-class DataReader;
-class Publisher;
-class DataWriter;
-} // namespace dds
-} // namespace fastdds
-} // namespace eprosima
-
-class ReqRepHelloWorldRequester
+class ReqRepHelloWorldRequester : public eprosima::fastdds::dds::rpc::Requester
 {
+
+protected:
+
+    ReqRepHelloWorldRequester(
+            eprosima::fastdds::dds::rpc::Service* service,
+            const eprosima::fastdds::dds::rpc::RequesterParams& params)
+        : eprosima::fastdds::dds::rpc::Requester(service, params),
+        matched_(0),
+        current_number_(std::numeric_limits<uint16_t>::max()),
+        number_received_(std::numeric_limits<uint16_t>::max())
+    {
+    }
+
 public:
 
-    class ReplyListener : public eprosima::fastdds::dds::DataReaderListener
-    {
-    public:
-
-        ReplyListener(
-                ReqRepHelloWorldRequester& requester)
-            : requester_(requester)
-        {
-        }
-
-        ~ReplyListener()
-        {
-        }
-
-        void on_data_available(
-                eprosima::fastdds::dds::DataReader* datareader) override;
-
-        void on_subscription_matched(
-                eprosima::fastdds::dds::DataReader*,
-                const eprosima::fastdds::dds::SubscriptionMatchedStatus& info) override
-        {
-            if (0 < info.current_count_change)
-            {
-                requester_.matched();
-            }
-        }
-
-    private:
-
-        ReplyListener& operator =(
-                const ReplyListener&) = delete;
-
-        ReqRepHelloWorldRequester& requester_;
-    }
-    reply_listener_;
-
-    class RequestListener : public eprosima::fastdds::dds::DataWriterListener
-    {
-    public:
-
-        RequestListener(
-                ReqRepHelloWorldRequester& requester)
-            : requester_(requester)
-        {
-        }
-
-        ~RequestListener()
-        {
-        }
-
-        void on_publication_matched(
-                eprosima::fastdds::dds::DataWriter*,
-                const eprosima::fastdds::dds::PublicationMatchedStatus& info) override
-        {
-            if (0 < info.current_count_change)
-            {
-                requester_.matched();
-            }
-        }
-
-    private:
-
-        RequestListener& operator =(
-                const RequestListener&) = delete;
-
-        ReqRepHelloWorldRequester& requester_;
-
-    }
-    request_listener_;
-
-    ReqRepHelloWorldRequester();
-    virtual ~ReqRepHelloWorldRequester();
-    void init();
-    void init_with_latency(
-            const eprosima::fastdds::dds::Duration_t& latency_budget_duration_pub,
-            const eprosima::fastdds::dds::Duration_t& latency_budget_duration_sub);
-    bool isInitialized() const
-    {
-        return initialized_;
-    }
+    virtual ~ReqRepHelloWorldRequester() = default;
 
     void newNumber(
             eprosima::fastdds::rtps::SampleIdentity related_sample_identity,
             uint16_t number);
-    void block(
-            const std::chrono::seconds& seconds);
     void wait_discovery();
     void matched();
     void send(
             const uint16_t number);
-    const eprosima::fastdds::dds::Duration_t datawriter_latency_budget_duration() const
+    void block(
+            const std::chrono::seconds& seconds);
+    
+    ///////////////////////////////////////////////
+    // Reply topic DataReader listener callbacks
+    ///////////////////////////////////////////////
+
+    void on_data_available(
+            eprosima::fastdds::dds::DataReader* datareader) override;
+
+    void on_subscription_matched(
+                eprosima::fastdds::dds::DataReader*,
+                const eprosima::fastdds::dds::SubscriptionMatchedStatus& info) override
     {
-        return request_datawriter_->get_qos().latency_budget().duration;
+        if (0 < info.current_count_change)
+        {
+            matched();
+        }
     }
 
-    const eprosima::fastdds::dds::Duration_t datareader_latency_budget_duration() const
+    ///////////////////////////////////////////////
+    // Request topic DataWriter listener callbacks
+    ///////////////////////////////////////////////
+
+    void on_publication_matched(
+                eprosima::fastdds::dds::DataWriter*,
+                const eprosima::fastdds::dds::PublicationMatchedStatus& info) override
     {
-        return reply_datareader_->get_qos().latency_budget().duration;
+        if (0 < info.current_count_change)
+        {
+            matched();
+        }
     }
-
-    virtual void configDatareader(
-            const std::string& suffix)
-    {
-        std::ostringstream t;
-
-        t << "ReqRepHelloworld_" << asio::ip::host_name() << "_" << GET_PID() << "_" << suffix;
-
-        datareader_topicname_ = t.str();
-    }
-
-    virtual void configDatawriter(
-            const std::string& suffix)
-    {
-
-        std::ostringstream t;
-
-        t << "ReqRepHelloworld_" << asio::ip::host_name() << "_" << GET_PID() << "_" << suffix;
-
-        datawriter_topicname_ = t.str();
-    }
-
-protected:
-
-    eprosima::fastdds::dds::DataWriterQos datawriter_qos_;
-    eprosima::fastdds::dds::DataReaderQos datareader_qos_;
-    std::string datareader_topicname_;
-    std::string datawriter_topicname_;
-
+    
 private:
 
-    ReqRepHelloWorldRequester& operator =(
-            const ReqRepHelloWorldRequester&) = delete;
-
+    unsigned int matched_;
     uint16_t current_number_;
     uint16_t number_received_;
-    eprosima::fastdds::dds::DomainParticipant* participant_;
-    eprosima::fastdds::dds::Topic* reply_topic_;
-    eprosima::fastdds::dds::Subscriber* reply_subscriber_;
-    eprosima::fastdds::dds::DataReader* reply_datareader_;
-    eprosima::fastdds::dds::Topic* request_topic_;
-    eprosima::fastdds::dds::Publisher* request_publisher_;
-    eprosima::fastdds::dds::DataWriter* request_datawriter_;
-    bool initialized_;
-    std::mutex mutex_;
+    std::mutex mtx_;
     std::condition_variable cv_;
-    std::mutex mutexDiscovery_;
-    std::condition_variable cvDiscovery_;
-    unsigned int matched_;
-    eprosima::fastdds::dds::TypeSupport type_;
+    std::mutex mtx_discovery_;
+    std::condition_variable cv_discovery_;
     eprosima::fastdds::rtps::SampleIdentity related_sample_identity_;
     eprosima::fastdds::rtps::SampleIdentity received_sample_identity_;
+
 };
 
 #endif // _TEST_BLACKBOX_REQREPHELLOWORLDREQUESTER_HPP_

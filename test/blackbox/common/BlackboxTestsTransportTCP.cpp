@@ -25,6 +25,8 @@
 
 #include "../api/dds-pim/TCPReqRepHelloWorldRequester.hpp"
 #include "../api/dds-pim/TCPReqRepHelloWorldReplier.hpp"
+#include "../api/dds-pim/TCPReqRepHelloWorldService.hpp"
+#include "../api/dds-pim/TCPReqRepHelloWorldServiceFactory.hpp"
 #include "PubSubParticipant.hpp"
 #include "PubSubReader.hpp"
 #include "PubSubWriter.hpp"
@@ -71,373 +73,658 @@ public:
 // TCP and Domain management with logical ports tests
 TEST_P(TransportTCP, TCPDomainHelloWorld_P0_P1_D0_D0)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
     const uint16_t nmsgs = 5;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(1, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    replier.init(1, 0, global_port);
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
-    ASSERT_TRUE(replier.isInitialized());
+    // Wait for discovery
+    requester->wait_discovery();
+    replier->wait_discovery();
 
-    // Wait for discovery.
-    requester.wait_discovery();
-    replier.wait_discovery();
-
-    ASSERT_TRUE(requester.is_matched());
-    ASSERT_TRUE(replier.is_matched());
+    ASSERT_TRUE(requester->is_matched());
+    ASSERT_TRUE(replier->is_matched());
 
     for (uint16_t count = 0; count < nmsgs; ++count)
     {
-        requester.send(count);
-        requester.block();
+        requester->send(count);
+        requester->block();
     }
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P0_P1_D0_D1)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(1, 1, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(1, 1, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery. They must not discover each other.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P0_P1_D1_D0)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 1, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 1, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(1, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(1, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery. They must not discover each other.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
 
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P0_P3_D0_D0)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
     const uint16_t nmsgs = 5;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(3, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(3, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
-    // Wait for discovery.
-    requester.wait_discovery();
-    replier.wait_discovery();
+    // Wait for discovery
+    requester->wait_discovery();
+    replier->wait_discovery();
+
+    ASSERT_TRUE(requester->is_matched());
+    ASSERT_TRUE(replier->is_matched());
 
     for (uint16_t count = 0; count < nmsgs; ++count)
     {
-        requester.send(count);
-        requester.block();
+        requester->send(count);
+        requester->block();
     }
 
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P0_P3_D0_D1)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(3, 1, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(3, 1, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery. They must not discover each other.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P0_P3_D1_D0)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 1, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 1, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(3, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(3, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery. They must not discover each other.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P3_P0_D0_D0)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
     const uint16_t nmsgs = 5;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(3, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(3, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(0, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(0, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
-    // Wait for discovery.
-    requester.wait_discovery();
-    replier.wait_discovery();
+    // Wait for discovery
+    requester->wait_discovery();
+    replier->wait_discovery();
 
-    ASSERT_TRUE(requester.is_matched());
-    ASSERT_TRUE(replier.is_matched());
+    ASSERT_TRUE(requester->is_matched());
+    ASSERT_TRUE(replier->is_matched());
 
     for (uint16_t count = 0; count < nmsgs; ++count)
     {
-        requester.send(count);
-        requester.block();
+        requester->send(count);
+        requester->block();
     }
 
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P3_P0_D0_D1)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(3, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(3, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(0, 1, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(0, 1, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery. They must not discover each other.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P3_P0_D1_D0)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(3, 1, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(3, 1, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(0, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(0, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery. They must not discover each other.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
 
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P2_P3_D0_D0)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
     const uint16_t nmsgs = 5;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(2, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(2, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(3, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(3, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
-    // Wait for discovery.
-    requester.wait_discovery();
-    replier.wait_discovery();
+    // Wait for discovery
+    requester->wait_discovery();
+    replier->wait_discovery();
+
+    ASSERT_TRUE(requester->is_matched());
+    ASSERT_TRUE(replier->is_matched());
 
     for (uint16_t count = 0; count < nmsgs; ++count)
     {
-        requester.send(count);
-        requester.block();
+        requester->send(count);
+        requester->block();
     }
 
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P2_P3_D0_D1)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(2, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(2, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(3, 1, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(3, 1, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery. They must not discover each other.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPDomainHelloWorld_P2_P3_D1_D0)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(2, 1, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(2, 1, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(3, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(3, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery. They must not discover each other.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPMaxInitialPeer_P0_4_P3)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port, 4);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port, 4);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(3, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(3, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery.
-    requester.wait_discovery();
-    replier.wait_discovery();
+    requester->wait_discovery();
+    replier->wait_discovery();
 
-    ASSERT_TRUE(requester.is_matched());
-    ASSERT_TRUE(replier.is_matched());
+    ASSERT_TRUE(requester->is_matched());
+    ASSERT_TRUE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPMaxInitialPeer_P0_4_P4)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port, 4);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port, 4);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(4, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(4, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery.
-    requester.wait_discovery(std::chrono::seconds(10));
+    requester->wait_discovery(std::chrono::seconds(10));
 
-    ASSERT_FALSE(requester.is_matched());
-    ASSERT_FALSE(replier.is_matched());
+    ASSERT_FALSE(requester->is_matched());
+    ASSERT_FALSE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 TEST_P(TransportTCP, TCPMaxInitialPeer_P0_5_P4)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port, 5);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port, 5);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(4, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(4, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery.
-    requester.wait_discovery();
-    replier.wait_discovery();
+    requester->wait_discovery();
+    replier->wait_discovery();
 
-    ASSERT_TRUE(requester.is_matched());
-    ASSERT_TRUE(replier.is_matched());
+    ASSERT_TRUE(requester->is_matched());
+    ASSERT_TRUE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 #if TLS_FOUND
 TEST_P(TransportTCP, TCP_TLS)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port, 5, certs_path);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port, 5, certs_path);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(4, 0, global_port, 5, certs_path);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(4, 0, global_port, 5, certs_path);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery.
-    requester.wait_discovery();
-    replier.wait_discovery();
+    requester->wait_discovery();
+    replier->wait_discovery();
 
-    ASSERT_TRUE(requester.is_matched());
-    ASSERT_TRUE(replier.is_matched());
+    ASSERT_TRUE(requester->is_matched());
+    ASSERT_TRUE(replier->is_matched());
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 // Test successful removal of client after previously matched server is removed
 TEST_P(TransportTCP, TCP_TLS_client_disconnect_after_server)
 {
-    TCPReqRepHelloWorldRequester* requester = new TCPReqRepHelloWorldRequester();
-    TCPReqRepHelloWorldReplier* replier = new TCPReqRepHelloWorldReplier();
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester->init(0, 0, global_port, 5, certs_path);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port, 5, certs_path);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester->isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier->init(4, 0, global_port, 5, certs_path);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(4, 0, global_port, 5, certs_path);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier->isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery.
     requester->wait_discovery();
@@ -447,25 +734,42 @@ TEST_P(TransportTCP, TCP_TLS_client_disconnect_after_server)
     ASSERT_TRUE(replier->is_matched());
 
     // Completely remove server prior to deleting client
-    delete replier;
+    replier_participant->delete_service(replier_service);
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    delete requester;
+    requester_participant->delete_service(requester_service);
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 // Test successful removal of server after previously matched client is removed
 // Issue -> https://eprosima.easyredmine.com/issues/16288
 TEST_P(TransportTCP, TCP_TLS_server_disconnect_after_client)
 {
-    TCPReqRepHelloWorldReplier* replier = new TCPReqRepHelloWorldReplier();
-    TCPReqRepHelloWorldRequester* requester = new TCPReqRepHelloWorldRequester();
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester->init(0, 0, global_port, 5, certs_path);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port, 5, certs_path);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester->isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier->init(4, 0, global_port, 5, certs_path);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(4, 0, global_port, 5, certs_path);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier->isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery.
     requester->wait_discovery();
@@ -475,9 +779,13 @@ TEST_P(TransportTCP, TCP_TLS_server_disconnect_after_client)
     ASSERT_TRUE(replier->is_matched());
 
     // Completely remove client prior to deleting server
-    delete requester;
+    requester_participant->delete_service(requester_service);
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    delete replier;
+    replier_participant->delete_service(replier_service);
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 void tls_init()
@@ -496,30 +804,47 @@ void tls_init()
 // Regression test for ShrinkLocators/transform_remote_locators mechanism.
 TEST_P(TransportTCP, TCPLocalhost)
 {
-    TCPReqRepHelloWorldRequester requester;
-    TCPReqRepHelloWorldReplier replier;
     const uint16_t nmsgs = 5;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    requester.init(0, 0, global_port, 0, nullptr, true);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port, 0, nullptr, true);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(requester.isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    replier.init(1, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(1, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(replier.isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery.
-    requester.wait_discovery();
-    replier.wait_discovery();
+    requester->wait_discovery();
+    replier->wait_discovery();
 
-    ASSERT_TRUE(requester.is_matched());
-    ASSERT_TRUE(replier.is_matched());
+    ASSERT_TRUE(requester->is_matched());
+    ASSERT_TRUE(replier->is_matched());
 
     for (uint16_t count = 0; count < nmsgs; ++count)
     {
-        requester.send(count);
-        requester.block();
+        requester->send(count);
+        requester->block();
     }
+
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 // Test for ==operator TCPTransportDescriptor is not required as it is an abstract class and in TCPv6 is same method
@@ -608,23 +933,95 @@ TEST(TransportTCP, TCPv4_get_WAN_address)
     ASSERT_EQ(tcpv4_transport.get_WAN_address(), "80.80.99.45");
 }
 
+// // Test connection is successfully restablished after dropping and relaunching a TCP client (requester)
+// // Issue -> https://github.com/eProsima/Fast-DDS/issues/2409
+// TEST_P(TransportTCP, Client_reconnection)
+// {
+//     TCPReqRepHelloWorldReplier* replier;
+//     TCPReqRepHelloWorldRequester* requester;
+//     const uint16_t nmsgs = 5;
+
+//     replier = new TCPReqRepHelloWorldReplier;
+//     replier->init(1, 0, global_port);
+
+//     ASSERT_TRUE(replier->isInitialized());
+
+//     requester = new TCPReqRepHelloWorldRequester;
+//     requester->init(0, 0, global_port);
+
+//     ASSERT_TRUE(requester->isInitialized());
+
+//     // Wait for discovery.
+//     replier->wait_discovery();
+//     requester->wait_discovery();
+
+//     ASSERT_TRUE(replier->is_matched());
+//     ASSERT_TRUE(requester->is_matched());
+
+//     for (uint16_t count = 0; count < nmsgs; ++count)
+//     {
+//         requester->send(count);
+//         requester->block();
+//     }
+
+//     // Release TCP client resources.
+//     delete requester;
+
+//     // Wait until unmatched.
+//     replier->wait_unmatched();
+//     ASSERT_FALSE(replier->is_matched());
+
+//     // Create new TCP client instance.
+//     requester = new TCPReqRepHelloWorldRequester;
+//     requester->init(0, 0, global_port);
+
+//     ASSERT_TRUE(requester->isInitialized());
+
+//     // Wait for discovery.
+//     replier->wait_discovery();
+//     requester->wait_discovery();
+
+//     ASSERT_TRUE(replier->is_matched());
+//     ASSERT_TRUE(requester->is_matched());
+
+//     for (uint16_t count = 0; count < nmsgs; ++count)
+//     {
+//         requester->send(count);
+//         requester->block();
+//     }
+
+//     delete replier;
+//     delete requester;
+// }
+
 // Test connection is successfully restablished after dropping and relaunching a TCP client (requester)
 // Issue -> https://github.com/eProsima/Fast-DDS/issues/2409
 TEST_P(TransportTCP, Client_reconnection)
 {
-    TCPReqRepHelloWorldReplier* replier;
-    TCPReqRepHelloWorldRequester* requester;
     const uint16_t nmsgs = 5;
+    std::unique_ptr<TCPReqRepHelloWorldServiceFactory> factory = std::make_unique<TCPReqRepHelloWorldServiceFactory>();
 
-    replier = new TCPReqRepHelloWorldReplier;
-    replier->init(1, 0, global_port);
+    // Create participant and service for requester
+    eprosima::fastdds::dds::DomainParticipant* requester_participant = factory->create_service_participant_for_requester(0, 0, global_port);
+    ASSERT_NE(requester_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* requester_service = requester_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(requester_service, nullptr);
+    eprosima::fastdds::dds::rpc::RequesterParams requester_params = requester_service->create_requester_params();
 
-    ASSERT_TRUE(replier->isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
-    requester = new TCPReqRepHelloWorldRequester;
-    requester->init(0, 0, global_port);
+    // Create participant and service for replier
+    eprosima::fastdds::dds::DomainParticipant* replier_participant = factory->create_service_participant_for_replier(1, 0, global_port);
+    ASSERT_NE(replier_participant, nullptr);
+    eprosima::fastdds::dds::rpc::Service* replier_service = replier_participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name());
+    ASSERT_NE(replier_service, nullptr);
+    eprosima::fastdds::dds::rpc::ReplierParams replier_params = replier_service->create_replier_params();
 
-    ASSERT_TRUE(requester->isInitialized());
+    eprosima::fastdds::dds::rpc::Replier* replier = replier_participant->create_service_replier(replier_service, replier_params.qos());
+    ASSERT_NE(replier, nullptr);
 
     // Wait for discovery.
     replier->wait_discovery();
@@ -640,17 +1037,15 @@ TEST_P(TransportTCP, Client_reconnection)
     }
 
     // Release TCP client resources.
-    delete requester;
+    requester_service->remove_requester(requester);
 
     // Wait until unmatched.
     replier->wait_unmatched();
     ASSERT_FALSE(replier->is_matched());
 
     // Create new TCP client instance.
-    requester = new TCPReqRepHelloWorldRequester;
-    requester->init(0, 0, global_port);
-
-    ASSERT_TRUE(requester->isInitialized());
+    eprosima::fastdds::dds::rpc::Requester* requester = requester_participant->create_service_requester(requester_service, requester_params.qos());
+    ASSERT_NE(requester, nullptr);
 
     // Wait for discovery.
     replier->wait_discovery();
@@ -665,8 +1060,9 @@ TEST_P(TransportTCP, Client_reconnection)
         requester->block();
     }
 
-    delete replier;
-    delete requester;
+    // Delete participants
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(requester_participant);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(replier_participant);
 }
 
 // Test zero listening port for TCPv4/v6

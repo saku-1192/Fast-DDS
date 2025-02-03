@@ -34,6 +34,10 @@ set(LISTENERTESTS_SOURCE ListenerTests.cpp
     ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/publisher/DataWriterHistory.cpp
     ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/publisher/DataWriterImpl.cpp
     ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/publisher/Publisher.cpp
+    ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/rpc/Replier.cpp
+    ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/rpc/Requester.cpp
+    ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/rpc/Service.cpp
+    ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/rpc/ServiceTypeSupport.cpp
     ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/publisher/PublisherImpl.cpp
     ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/publisher/qos/DataWriterQos.cpp
     ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/publisher/qos/PublisherQos.cpp
