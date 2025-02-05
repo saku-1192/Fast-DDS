@@ -23,6 +23,8 @@
 #include <fastdds/dds/rpc/Replier.hpp>
 #include <fastdds/rtps/common/SampleIdentity.hpp>
 
+#include <condition_variable>
+
 #include "../../types/HelloWorld.hpp"
 
 class ReqRepHelloWorldReplier : public eprosima::fastdds::dds::rpc::Replier

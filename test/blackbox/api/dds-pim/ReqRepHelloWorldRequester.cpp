@@ -28,7 +28,7 @@ void ReqRepHelloWorldRequester::newNumber(
         eprosima::fastdds::rtps::SampleIdentity related_sample_identity,
         uint16_t number)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mtx_);
     received_sample_identity_ = related_sample_identity;
     number_received_ = number;
     ASSERT_EQ(current_number_, number_received_);
@@ -46,7 +46,7 @@ void ReqRepHelloWorldRequester::on_data_available(
     HelloWorld hello;
     SampleInfo info;
 
-    if (RETCODE_OK == this->take_reply(void*)&hello, info)
+    if (RETCODE_OK == this->take_reply((void*)&hello, info))
     {
         if (info.valid_data)
         {
@@ -89,7 +89,7 @@ void ReqRepHelloWorldRequester::send(
     hello.message("HelloWorld");
 
     {
-        std::unique_lock<std::mutex> lock(mutex_);
+        std::unique_lock<std::mutex> lock(mtx_);
         current_number_ = number;
     }
 
@@ -101,7 +101,7 @@ void ReqRepHelloWorldRequester::send(
 void ReqRepHelloWorldRequester::block(
         const std::chrono::seconds& seconds)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mtx_);
 
     bool timeout = cv_.wait_for(lock, seconds, [&]() -> bool
                     {

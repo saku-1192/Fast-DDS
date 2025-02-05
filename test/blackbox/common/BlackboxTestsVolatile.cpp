@@ -34,6 +34,8 @@
 #include "../api/dds-pim/ReqRepHelloWorldServiceFactory.hpp"
 
 using namespace eprosima::fastdds;
+using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::dds::rpc;
 
 enum communication_type
 {
@@ -258,29 +260,29 @@ TEST_P(Volatile, AsyncVolatileKeepAllPubReliableSubNonReliableHelloWorld)
 TEST_P(Volatile, ReqRepVolatileHelloworldRequesterCheckWriteParams)
 {
     std::unique_ptr<ReqRepHelloWorldServiceFactory> factory = std::make_unique<ReqRepHelloWorldServiceFactory>();
-    eprosima::fastdds::dds::DomainParticipant* participant = factory->create_service_participant();
+    DomainParticipant* participant = factory->create_service_participant();
     ASSERT_NE(participant, nullptr);
-    eprosima::fastdds::dds::rpc::Service* service = participant->create_service_from_factory(
-        factory, factory->get_service_name(), factory->get_service_type_name());
+    ReqRepHelloWorldService* service = dynamic_cast<ReqRepHelloWorldService*>(participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name()));
     ASSERT_NE(service, nullptr);
-    eprosima::fastdds::dds::rpc::RequesterParams requester_params = service->create_requester_params();
+    RequesterParams requester_params = service->create_requester_params();
 
-    requester_params.qos().writer_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
-    requester_params.qos().reader_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
+    requester_params.qos().writer_qos.reliability().kind = RELIABLE_RELIABILITY_QOS;
+    requester_params.qos().reader_qos.reliability().kind = RELIABLE_RELIABILITY_QOS;
     // Increase default max_blocking_time to 1 second, as our CI infrastructure shows some
     // big CPU overhead sometimes
     requester_params.qos().writer_qos.reliability().max_blocking_time.seconds = 1;
     requester_params.qos().writer_qos.reliability().max_blocking_time.nanosec = 0;
 
-    requester_params.qos().writer_qos.durability().kind = eprosima::fastdds::dds::VOLATILE_DURABILITY_QOS;
-    requester_params.qos().reader_qos.durability().kind = eprosima::fastdds::dds::VOLATILE_DURABILITY_QOS;
+    requester_params.qos().writer_qos.durability().kind = VOLATILE_DURABILITY_QOS;
+    requester_params.qos().reader_qos.durability().kind = VOLATILE_DURABILITY_QOS;
 
-    eprosima::fastdds::dds::rpc::Requester* requester = participant->create_service_requester(service, requester_params.qos());
+    ReqRepHelloWorldRequester* requester = dynamic_cast<ReqRepHelloWorldRequester*>(participant->create_service_requester(service, requester_params.qos()));
     ASSERT_NE(requester, nullptr);
 
-    requester.send(1);
+    requester->send(1);
 
-    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(participant);
+    DomainParticipantFactory::get_instance()->delete_participant(participant);
 }
 
 // Test created to check bug #5423, github ros2/ros2 #703

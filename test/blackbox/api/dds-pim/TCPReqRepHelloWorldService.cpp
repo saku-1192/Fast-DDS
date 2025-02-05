@@ -17,10 +17,11 @@
 #include "TCPReqRepHelloWorldRequester.hpp"
 #include "../../common/BlackboxTests.hpp"
 
-using namespace eprosima::fastdds::dds::rpc;
 using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::dds::rpc;
+using namespace eprosima::fastdds::rtps;
 
-Requester* ReqRepHelloWorldService::create_requester_instance(
+Requester* TCPReqRepHelloWorldService::create_requester_instance(
         const RequesterParams& params)
 {
     try
@@ -34,7 +35,7 @@ Requester* ReqRepHelloWorldService::create_requester_instance(
     }
 }
 
-Replier* ReqRepHelloWorldService::create_replier_instance(
+Replier* TCPReqRepHelloWorldService::create_replier_instance(
         const ReplierParams& params)
 {
     try
@@ -48,7 +49,7 @@ Replier* ReqRepHelloWorldService::create_replier_instance(
     }
 }
 
-ReplierParams ReqRepHelloWorldService::create_replier_params()
+ReplierParams TCPReqRepHelloWorldService::create_replier_params()
 {
     ReplierQos replier_qos;
     DataWriterQos writer_qos;
@@ -75,7 +76,7 @@ ReplierParams ReqRepHelloWorldService::create_replier_params()
     return replier_params;
 }
 
-RequesterParams ReqRepHelloWorldService::create_requester_params()
+RequesterParams TCPReqRepHelloWorldService::create_requester_params()
 {
     RequesterQos requester_qos;
     DataWriterQos writer_qos;

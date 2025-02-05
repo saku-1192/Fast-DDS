@@ -288,7 +288,7 @@ public:
      */
     virtual ReturnCode_t create_request_reply_topics();
 
-private:
+protected:
     
     //! Service name
     std::string service_name_;

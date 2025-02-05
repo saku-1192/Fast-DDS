@@ -34,6 +34,9 @@ public:
 
     virtual ~ReqRepHelloWorldService() = default;
 
+    eprosima::fastdds::dds::rpc::ReplierParams create_replier_params();
+    eprosima::fastdds::dds::rpc::RequesterParams create_requester_params();
+    
 protected:
 
     virtual eprosima::fastdds::dds::rpc::Requester* create_requester_instance(
@@ -42,9 +45,6 @@ protected:
     virtual eprosima::fastdds::dds::rpc::Replier* create_replier_instance(
             const eprosima::fastdds::dds::rpc::ReplierParams& params) override;
 
-    eprosima::fastdds::dds::rpc::ReplierParams create_replier_params();
-
-    eprosima::fastdds::dds::rpc::RequesterParams create_requester_params();
     
 };
 

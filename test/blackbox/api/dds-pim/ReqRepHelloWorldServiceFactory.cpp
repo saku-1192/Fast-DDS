@@ -26,11 +26,11 @@ DomainParticipant* ReqRepHelloWorldServiceFactory::create_service_participant()
     DomainParticipant* participant = DomainParticipantFactory::get_instance()->create_participant(
         (uint32_t)GET_PID() % 230,
         PARTICIPANT_QOS_DEFAULT);
-    ASSERT_NE(participant, nullptr);
-    ASSERT_TRUE(participant->is_enabled());
+    assert(participant != nullptr);
+    assert(participant->is_enabled());
 
     // Register service type
-    ASSERT_EQ(participant->register_service_type(service_type_, service_type_name_), RETCODE_OK);
+    assert(participant->register_service_type(service_type_, service_type_name_) == RETCODE_OK);
 
     return participant;
 }

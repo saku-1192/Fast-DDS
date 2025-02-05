@@ -14,8 +14,10 @@
 
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/domain/qos/DomainParticipantQos.hpp>
+#include <fastdds/rtps/common/LocatorList.hpp>
 #include <fastdds/rtps/transport/TCPv4TransportDescriptor.hpp>
 #include <fastdds/rtps/transport/TCPv6TransportDescriptor.hpp>
+
 #include <fastdds/utils/IPFinder.hpp>
 #include <fastdds/utils/IPLocator.hpp>
 
@@ -26,6 +28,7 @@
 
 using namespace eprosima::fastdds::dds;
 using namespace eprosima::fastdds::dds::rpc;
+using namespace eprosima::fastdds::rtps;
 
 DomainParticipant* TCPReqRepHelloWorldServiceFactory::create_service_participant_for_requester(
         int participantId,
@@ -120,11 +123,11 @@ DomainParticipant* TCPReqRepHelloWorldServiceFactory::create_service_participant
 
     DomainParticipant* participant = eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->create_participant(
         domainId, participant_qos);
-    ASSERT_NE(participant, nullptr);
-    ASSERT_TRUE(participant->is_enabled());
+    assert(participant != nullptr);
+    assert(participant->is_enabled());
 
     // Register service type
-    ASSERT_EQ(participant->register_service_type(service_type_, service_type_name_), RETCODE_OK);
+    assert(participant->register_service_type(service_type_, service_type_name_) == RETCODE_OK);
 
     return participant;
 }
@@ -180,11 +183,11 @@ DomainParticipant* TCPReqRepHelloWorldServiceFactory::create_service_participant
 
     DomainParticipant* participant = DomainParticipantFactory::get_instance()->create_participant(
         domainId, participant_qos);
-    ASSERT_NE(participant, nullptr);
-    ASSERT_TRUE(participant->is_enabled());
+    assert(participant != nullptr);
+    assert(participant->is_enabled());
 
     // Register service type
-    ASSERT_EQ(participant->register_service_type(service_type_, service_type_name_), RETCODE_OK);
+    assert(participant->register_service_type(service_type_, service_type_name_) == RETCODE_OK);
 
     return participant;
 }

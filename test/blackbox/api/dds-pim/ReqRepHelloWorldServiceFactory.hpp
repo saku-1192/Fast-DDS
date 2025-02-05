@@ -39,7 +39,7 @@ public:
 
     ReqRepHelloWorldServiceFactory()
         : service_type_name_("ReqRepHelloWorldServiceType"),
-        service_type_(new HelloWorldPubSubType(), new HelloWorldPubSubType())
+        service_type_(eprosima::fastdds::dds::TypeSupport(new HelloWorldPubSubType()), eprosima::fastdds::dds::TypeSupport(new HelloWorldPubSubType()))
     {
         std::ostringstream service_name;
         service_name << "ReqRepHelloWorldService_" << asio::ip::host_name() << "_" << GET_PID();

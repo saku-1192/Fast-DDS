@@ -22,12 +22,14 @@
 
 #include <fastdds/dds/rpc/Replier.hpp>
 
+#include <condition_variable>
+
 class TCPReqRepHelloWorldReplier : public eprosima::fastdds::dds::rpc::Replier
 {
 
 protected:
 
-    ReqRepHelloWorldReplier(
+    TCPReqRepHelloWorldReplier(
             eprosima::fastdds::dds::rpc::Service* service,
             const eprosima::fastdds::dds::rpc::ReplierParams& params)
         : eprosima::fastdds::dds::rpc::Replier(service, params),
@@ -55,7 +57,7 @@ public:
     ////////////////////////////////////////////////
     
     void on_data_available(
-            eprosima::fastdds::dds::DataWriter* datawriter) override;
+            eprosima::fastdds::dds::DataReader* datawriter) override;
 
     void on_subscription_matched(
                 eprosima::fastdds::dds::DataReader* /*datareader*/,

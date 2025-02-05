@@ -28,9 +28,15 @@
 #include "PubSubParticipant.hpp"
 #include "PubSubReader.hpp"
 #include "PubSubWriter.hpp"
+#include "../../api/dds-pim/ReqRepHelloWorldReplier.hpp"
+#include "../../api/dds-pim/ReqRepHelloWorldRequester.hpp"
+#include "../../api/dds-pim/ReqRepHelloWorldService.hpp"
+#include "../../api/dds-pim/ReqRepHelloWorldServiceFactory.hpp"
 
 using namespace eprosima::fastdds;
 using namespace eprosima::fastdds::rtps;
+using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::dds::rpc;
 
 enum communication_type
 {
@@ -263,18 +269,18 @@ TEST_P(PubSubBasic, ReqRepAsReliableHelloworld)
     const uint16_t nmsgs = 10;
 
     std::unique_ptr<ReqRepHelloWorldServiceFactory> factory = std::make_unique<ReqRepHelloWorldServiceFactory>();
-    eprosima::fastdds::dds::DomainParticipant* participant = factory->create_service_participant();
+    DomainParticipant* participant = factory->create_service_participant();
     ASSERT_NE(participant, nullptr);
-    eprosima::fastdds::dds::rpc::Service* service = participant->create_service_from_factory(
-        factory, factory->get_service_name(), factory->get_service_type_name());
+    ReqRepHelloWorldService* service = dynamic_cast<ReqRepHelloWorldService*>(participant->create_service_from_factory(
+        factory.get(), factory->get_service_name(), factory->get_service_type_name()));
     ASSERT_NE(service, nullptr);
-    eprosima::fastdds::dds::rpc::RequesterParams requester_params = service->create_requester_params();
-    eprosima::fastdds::dds::rpc::ReplierParams replier_params = service->create_replier_params();
+    RequesterParams requester_params = service->create_requester_params();
+    ReplierParams replier_params = service->create_replier_params();
 
-    requester_params.qos().writer_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
-    requester_params.qos().reader_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
-    replier_params.qos().writer_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
-    replier_params.qos().reader_qos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
+    requester_params.qos().writer_qos.reliability().kind = RELIABLE_RELIABILITY_QOS;
+    requester_params.qos().reader_qos.reliability().kind = RELIABLE_RELIABILITY_QOS;
+    replier_params.qos().writer_qos.reliability().kind = RELIABLE_RELIABILITY_QOS;
+    replier_params.qos().reader_qos.reliability().kind = RELIABLE_RELIABILITY_QOS;
     // Increase default max_blocking_time to 1 second, as our CI infrastructure shows some
     // big CPU overhead sometimes
     requester_params.qos().writer_qos.reliability().max_blocking_time.seconds = 1;
@@ -282,8 +288,8 @@ TEST_P(PubSubBasic, ReqRepAsReliableHelloworld)
     replier_params.qos().writer_qos.reliability().max_blocking_time.seconds = 1;
     replier_params.qos().writer_qos.reliability().max_blocking_time.nanosec = 0;
 
-    eprosima::fastdds::dds::rpc::Requester* requester = participant->create_service_requester(service, requester_params.qos());
-    eprosima::fastdds::dds::rpc::Replier* replier = participant->create_service_replier(service, replier_params.qos());
+    ReqRepHelloWorldRequester* requester = dynamic_cast<ReqRepHelloWorldRequester*>(participant->create_service_requester(service, requester_params.qos()));
+    ReqRepHelloWorldReplier* replier = dynamic_cast<ReqRepHelloWorldReplier*>(participant->create_service_replier(service, replier_params.qos()));
     ASSERT_NE(requester, nullptr);
     ASSERT_NE(replier, nullptr);
 
@@ -296,7 +302,7 @@ TEST_P(PubSubBasic, ReqRepAsReliableHelloworld)
         requester->block(std::chrono::seconds(5));
     }
 
-    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(participant);
+    DomainParticipantFactory::get_instance()->delete_participant(participant);
 }
 
 TEST_P(PubSubBasic, PubSubAsReliableData64kb)

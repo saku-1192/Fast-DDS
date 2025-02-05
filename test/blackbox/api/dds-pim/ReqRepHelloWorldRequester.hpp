@@ -23,6 +23,8 @@
 #include <fastdds/dds/rpc/Requester.hpp>
 #include <fastdds/rtps/common/SampleIdentity.hpp>
 
+#include <condition_variable>
+
 #include "../../types/HelloWorld.hpp"
 
 class ReqRepHelloWorldRequester : public eprosima::fastdds::dds::rpc::Requester

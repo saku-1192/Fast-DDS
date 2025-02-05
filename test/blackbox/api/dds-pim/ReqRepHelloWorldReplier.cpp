@@ -68,7 +68,7 @@ void ReqRepHelloWorldReplier::on_data_available(
     HelloWorld hello;
     SampleInfo info;
 
-    if (RETCODE_OK == this->take_reply((void*)&hello, &info))
+    if (RETCODE_OK == this->take_request((void*)&hello, info))
     {
         if (info.valid_data)
         {

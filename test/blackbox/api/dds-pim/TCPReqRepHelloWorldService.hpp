@@ -24,7 +24,7 @@ class TCPReqRepHelloWorldService : public eprosima::fastdds::dds::rpc::Service
         
 public:
 
-    ReqRepHelloWorldService(
+    TCPReqRepHelloWorldService(
             const std::string& service_name,
             const std::string& service_type_name,
             eprosima::fastdds::dds::DomainParticipantImpl* participant)
@@ -32,7 +32,10 @@ public:
     {
     }
 
-    virtual ~ReqRepHelloWorldService() = default;
+    virtual ~TCPReqRepHelloWorldService() = default;
+
+    eprosima::fastdds::dds::rpc::ReplierParams create_replier_params();
+    eprosima::fastdds::dds::rpc::RequesterParams create_requester_params();
 
 protected:
 
@@ -41,11 +44,7 @@ protected:
     
     virtual eprosima::fastdds::dds::rpc::Replier* create_replier_instance(
             const eprosima::fastdds::dds::rpc::ReplierParams& params) override;
-
-    eprosima::fastdds::dds::rpc::ReplierParams create_replier_params();
-
-    eprosima::fastdds::dds::rpc::RequesterParams create_requester_params();
-    
+            
 };
 
 

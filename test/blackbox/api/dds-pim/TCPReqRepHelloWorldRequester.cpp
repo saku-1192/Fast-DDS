@@ -29,7 +29,7 @@ void TCPReqRepHelloWorldRequester::newNumber(
         SampleIdentity related_sample_identity,
         uint16_t number)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mtx_);
     received_sample_identity_ = related_sample_identity;
     number_received_ = number;
     ASSERT_EQ(current_number_, number_received_);
@@ -39,7 +39,7 @@ void TCPReqRepHelloWorldRequester::newNumber(
     }
 }
 
-void TCPReqRepHelloWorldRequester::ReplyListener::on_data_available(
+void TCPReqRepHelloWorldRequester::on_data_available(
         eprosima::fastdds::dds::DataReader* datareader)
 {
     ASSERT_NE(datareader, nullptr);
@@ -124,11 +124,11 @@ void TCPReqRepHelloWorldRequester::send(
     hello.message("HelloWorld");
 
     {
-        std::unique_lock<std::mutex> lock(mutex_);
+        std::unique_lock<std::mutex> lock(mtx_);
         current_number_ = number;
     }
 
-    ASSERT_EQ(this->send_request((void*)&hello, wparams), RETCODE_OK);
+    ASSERT_EQ(this->send_request((void*)&hello, info), RETCODE_OK);
     related_sample_identity_ = info.sample_identity();
     ASSERT_NE(related_sample_identity_.sequence_number(), SequenceNumber_t());
 }

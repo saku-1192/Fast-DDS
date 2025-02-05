@@ -124,7 +124,7 @@ RequesterParams ReqRepHelloWorldService::create_requester_params()
         writer_qos.properties().properties().emplace_back("fastdds.push_mode", "false");
     }
 
-    requester_qos.service_name = service_name_
+    requester_qos.service_name = service_name_;
     requester_qos.request_type = request_topic_->get_type_name();
     requester_qos.reply_type = reply_topic_->get_type_name();
     requester_qos.request_topic_name = request_topic_->get_name();

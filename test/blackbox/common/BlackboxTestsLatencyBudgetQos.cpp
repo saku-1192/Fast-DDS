@@ -12,12 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
+#include <fastdds/dds/rpc/Requester.hpp>
+#include <fastdds/dds/rpc/RequesterParams.hpp>
 
 #include "BlackboxTests.hpp"
 #include "../api/dds-pim/ReqRepHelloWorldServiceFactory.hpp"
+#include "../api/dds-pim/ReqRepHelloWorldService.hpp"
 
 #include <gtest/gtest.h>
+
+using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::dds::rpc;
 
 TEST(LatencyBudgetQos, DurationCheck)
 {
@@ -25,16 +32,16 @@ TEST(LatencyBudgetQos, DurationCheck)
 
     DomainParticipant* participant = factory->create_service_participant();
     ASSERT_NE(participant, nullptr);
-    Service* service = participant->create_service_from_factory(
-            factory, factory->get_service_name(), factory->get_service_type_name());
+    ReqRepHelloWorldService* service = dynamic_cast<ReqRepHelloWorldService*>(participant->create_service_from_factory(
+            factory.get(), factory->get_service_name(), factory->get_service_type_name()));
     ASSERT_NE(service, nullptr);
 
     eprosima::fastdds::dds::Duration_t latency_budget_pub(10);
     eprosima::fastdds::dds::Duration_t latency_budget_sub(20);
 
     RequesterParams requester_params = service->create_requester_params();
-    requester_params.qos().writer_qos.latency_budget_duration(latency_budget_pub);
-    requester_params.qos().reader_qos.latency_budget_duration(latency_budget_sub);
+    requester_params.qos().writer_qos.latency_budget().duration = latency_budget_pub;
+    requester_params.qos().reader_qos.latency_budget().duration = latency_budget_sub;
 
     Requester* requester = participant->create_service_requester(service, requester_params.qos());
     ASSERT_NE(requester, nullptr);

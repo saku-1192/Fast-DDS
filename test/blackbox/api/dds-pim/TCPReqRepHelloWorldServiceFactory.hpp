@@ -22,8 +22,8 @@
 
 #include <asio.hpp>
 
+#include "TCPReqRepHelloWorldService.hpp"
 #include "../../types/HelloWorldPubSubTypes.hpp"
-#include "ReqRepHelloWorldService.hpp"
 
 #if defined(_WIN32)
 #define GET_PID _getpid
@@ -39,14 +39,14 @@ public:
 
     TCPReqRepHelloWorldServiceFactory()
         : service_type_name_("TCPReqRepHelloWorldServiceType"),
-        service_type_(new HelloWorldPubSubType(), new HelloWorldPubSubType())
+        service_type_(eprosima::fastdds::dds::TypeSupport(new HelloWorldPubSubType()), eprosima::fastdds::dds::TypeSupport(new HelloWorldPubSubType()))
     {
         std::ostringstream service_name;
         service_name << "TCPReqRepHelloWorldService_" << asio::ip::host_name() << "_" << GET_PID();
         service_name_ = service_name.str();
     }
 
-    virtual ~ReqRepHelloWorldServiceFactory() = default;
+    virtual ~TCPReqRepHelloWorldServiceFactory() = default;
 
     // Create participants with specific configurations for this service
     // The user is responsible for deleting the participant manually
@@ -57,7 +57,7 @@ public:
             uint16_t listeningPort,
             uint32_t maxInitialPeer = 0,
             const char* certs_folder = nullptr,
-            bool force_localhost = nullptr);
+            bool force_localhost = false);
 
     // Custom participant configuration for TCPReqRepHelloWorldReplier
     eprosima::fastdds::dds::DomainParticipant* create_service_participant_for_replier(
@@ -90,7 +90,7 @@ protected:
         }
         catch (const std::exception& e)
         {
-            std::cout << "Error creating TCPReqRepHelloWorldService instance: " << e.what() << std::endl;
+            EPROSIMA_LOG_ERROR(TCPREQREPHELLOWORLDSERVICEFACTORY, "Error creating TCPReqRepHelloWorldService instance: " << e.what());
             return nullptr;
         }
     }

@@ -18,11 +18,13 @@
  */
 
 #include "TCPReqRepHelloWorldReplier.hpp"
+#include "../../types/HelloWorld.hpp"
 
 #include <gtest/gtest.h>
 
-using namespace eprosima::fastdds::dds:rpc;
+using namespace eprosima::fastdds::dds::rpc;
 using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::rtps;
 
 void TCPReqRepHelloWorldReplier::new_sample(
         SampleIdentity sample_identity,
@@ -111,7 +113,7 @@ bool TCPReqRepHelloWorldReplier::is_matched()
     return matched_ > 1;
 }
 
-void TCPReqRepHelloWorldReplier::ReplyListener::on_data_available(
+void TCPReqRepHelloWorldReplier::on_data_available(
         DataReader* datareader)
 {
     ASSERT_NE(datareader, nullptr);

@@ -23,13 +23,12 @@
 #include <fastdds/dds/rpc/Requester.hpp>
 #include <fastdds/rtps/common/SampleIdentity.hpp>
 
+#include <condition_variable>
+
 #include "../../types/HelloWorld.hpp"
 
 class TCPReqRepHelloWorldRequester : public eprosima::fastdds::dds::rpc::Requester
 {
-
-// Allow access to protected methods to check if dds entities qos are correctly configured
-friend class 
 
 protected:
 
@@ -45,7 +44,7 @@ protected:
 
 public:
 
-    virtual ~ReqRepHelloWorldRequester() = default;
+    virtual ~TCPReqRepHelloWorldRequester() = default;
 
     void newNumber(
             eprosima::fastdds::rtps::SampleIdentity related_sample_identity,
@@ -72,11 +71,11 @@ public:
     {
         if (0 < info.current_count_change)
         {
-            requester_.matched();
+            matched();
         }
         else if (0 > info.current_count_change)
         {
-            requester_.unmatched();
+            unmatched();
         }
     }
 
@@ -90,7 +89,7 @@ public:
     {
         if (0 < info.current_count_change)
         {
-            requester_.matched();
+            matched();
         }
     }
 

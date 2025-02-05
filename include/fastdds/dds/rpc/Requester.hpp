@@ -42,6 +42,9 @@ class Service;
 /**
  * @brief Class that represents a requester entity in the RPC communication.
  */
+
+// TODO: Due to we will not use callbacks in the replier base implementation, is it better to avoid inheritance from DataWriterListener and DataReaderListener?
+// If we remove it, a different way to handle the DDS entities is needed, because they are created on Replier/Requester constructors using this as a pointer to the listener.
 class Requester : public RPCEntity, public DataWriterListener, public DataReaderListener
 {
 
@@ -138,6 +141,102 @@ public:
     inline void get_service(Service*& service) const
     {
         service = service_;
+    }
+
+    // DataWriter listener callbacks
+    virtual void on_publication_matched(
+            DataWriter* writer,
+            const PublicationMatchedStatus& info) override
+    {
+        static_cast<void>(writer);
+        static_cast<void>(info);
+    }
+
+    virtual void on_offered_deadline_missed(
+            DataWriter* writer,
+            const OfferedDeadlineMissedStatus& status) override
+    {
+        static_cast<void>(writer);
+        static_cast<void>(status);
+    }
+
+    virtual void on_offered_incompatible_qos(
+            DataWriter* writer,
+            const OfferedIncompatibleQosStatus& status) override
+    {
+        static_cast<void>(writer);
+        static_cast<void>(status);
+    }
+
+    virtual void on_liveliness_lost(
+            DataWriter* writer,
+            const LivelinessLostStatus& status) override
+    {
+        static_cast<void>(writer);
+        static_cast<void>(status);
+    }
+
+    virtual void on_unacknowledged_sample_removed(
+            DataWriter* writer,
+            const InstanceHandle_t& instance) override
+    {
+        static_cast<void>(writer);
+        static_cast<void>(instance);
+    }
+
+    // DataReader listener callbacks
+    virtual void on_data_available(
+            DataReader* reader) override
+    {
+        static_cast<void>(reader);
+    }
+
+    virtual void on_subscription_matched(
+            DataReader* reader,
+            const fastdds::dds::SubscriptionMatchedStatus& info) override
+    {
+        static_cast<void>(reader);
+        static_cast<void>(info);
+    }
+
+    virtual void on_requested_deadline_missed(
+            DataReader* reader,
+            const RequestedDeadlineMissedStatus& status) override
+    {
+        static_cast<void>(reader);
+        static_cast<void>(status);
+    }
+
+    virtual void on_liveliness_changed(
+            DataReader* reader,
+            const LivelinessChangedStatus& status) override
+    {
+        static_cast<void>(reader);
+        static_cast<void>(status);
+    }
+
+    virtual void on_sample_rejected(
+            DataReader* reader,
+            const SampleRejectedStatus& status) override
+    {
+        static_cast<void>(reader);
+        static_cast<void>(status);
+    }
+
+    virtual void on_requested_incompatible_qos(
+            DataReader* reader,
+            const RequestedIncompatibleQosStatus& status) override
+    {
+        static_cast<void>(reader);
+        static_cast<void>(status);
+    }
+
+    virtual void on_sample_lost(
+            DataReader* reader,
+            const SampleLostStatus& status) override
+    {
+        static_cast<void>(reader);
+        static_cast<void>(status);
     }
 
 protected:

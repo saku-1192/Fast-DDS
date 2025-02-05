@@ -56,6 +56,14 @@ public:
     /**
      * @brief Setter for Requester QoS
      */
+    dds::RequesterQos& qos()
+    {
+        return qos_;
+    }
+
+    /**
+     * @brief Setter for Requester QoS
+     */
     void qos(
             const RequesterQos& qos)
     {

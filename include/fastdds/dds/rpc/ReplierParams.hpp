@@ -56,6 +56,14 @@ public:
     /**
      * @brief Setter for Replier QoS
      */
+    ReplierQos& qos()
+    {
+        return qos_;
+    }
+
+    /**
+     * @brief Setter for Replier QoS
+     */
     void qos(
             const ReplierQos& qos)
     {
