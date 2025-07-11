@@ -1597,6 +1597,114 @@ TEST_P(DDSDataWriter, datawriter_prefilter_filtering_by_payload)
     ASSERT_EQ(reader.block_for_all(std::chrono::seconds(1)), 5u);
 }
 
+/**
+ * @test TRP-FUN-01 Check that the values set in the `TRANSPORT_PRIORITY` QoS of a DataWriter
+ *       are passed to the transport layer.
+ */
+TEST(DDSDataWriter, transport_priority)
+{
+}
+
+/**
+ * @test TRP-FUN-02 Check that retransmission of samples use updated values of the transport priority
+ *                  (i.e. that priority is not associated to the sample, but to the `DataWriter`)
+ */
+TEST(DDSDataWriter, transport_priority_late_joiner)
+{
+}
+
+/**
+ * @test TRP-FUN-03 Check that TRANSPORT_PRIORITY QoS is mutable.
+ */
+TEST(DDSDataWriter, transport_priority_mutable)
+{
+    namespace fdds = eprosima::fastdds::dds;
+
+    // ----------- Configuration -----------
+    constexpr int32_t PRIORITY_2 = -23;
+    constexpr int32_t PRIORITY_3 = 42;
+
+    // ----------- Setup -----------
+
+    PubSubWriter<HelloWorldPubSubType> writer(TEST_TOPIC_NAME);
+
+    // ----------- Procedure -----------
+
+    // 1. Create a disabled `DataWriter` with default QoS.
+    fdds::PublisherQos pub_qos{};
+    pub_qos.entity_factory().autoenable_created_entities = false;
+    writer.publisher_qos(pub_qos).init();
+    ASSERT_TRUE(writer.isInitialized());
+    fdds::DataWriter& data_writer = writer.get_native_writer();
+
+    // 2. Get the writer's current QoS into `current_qos` and save the transport priority into `transport_priority_1`.
+    auto current_qos = data_writer.get_qos();
+    int32_t transport_priority_1 = current_qos.transport_priority().value;
+
+    // 3. Update the transport priority in `current_qos` to `PRIORITY_2` and set the `DataWriter` QoS to `current_qos`.
+    current_qos.transport_priority().value = PRIORITY_2;
+    EXPECT_EQ(data_writer.set_qos(current_qos), fdds::RETCODE_OK);
+
+    // 4. Get the writer's current QoS into `current_qos` and save the transport priority into `transport_priority_2`.
+    current_qos = data_writer.get_qos();
+    int32_t transport_priority_2 = current_qos.transport_priority().value;
+
+    // 5. Enable the `DataWriter`.
+    EXPECT_EQ(data_writer.enable(), fdds::RETCODE_OK);
+
+    // 6. Update the transport priority in `current_qos` to `PRIORITY_3` and set the `DataWriter` QoS to `current_qos`.
+    current_qos.transport_priority().value = PRIORITY_3;
+    EXPECT_EQ(data_writer.set_qos(current_qos), fdds::RETCODE_OK);
+
+    // 7. Get the writer's current QoS into `current_qos` and save the transport priority into `transport_priority_3`.
+    current_qos = data_writer.get_qos();
+    int32_t transport_priority_3 = current_qos.transport_priority().value;
+
+    // ----------- Assertions -----------
+
+    // 1. `transport_priority_1` equals `0`.
+    EXPECT_EQ(transport_priority_1, 0);
+
+    // 2. `transport_priority_2` equals `PRIORITY_2`.
+    EXPECT_EQ(transport_priority_2, PRIORITY_2);
+
+    // 3. `transport_priority_3` equals `PRIORITY_3`.
+    EXPECT_EQ(transport_priority_3, PRIORITY_3);
+}
+
+/**
+ * @test TRP-FUN-04 Check that TRANSPORT_PRIORITY QoS can be loaded from an XML.
+ */
+TEST(DDSDataWriter, transport_priority_xml)
+{
+    namespace fdds = eprosima::fastdds::dds;
+
+    // ----------- Configuration -----------
+    constexpr int32_t PRIORITY_1 = 12;
+
+    // ----------- Setup -----------
+
+    PubSubWriter<HelloWorldPubSubType> writer(TEST_TOPIC_NAME);
+
+    // ----------- Procedure -----------
+
+    // 1. Create a `DataWriter` with `create_datawriter_from_profile` using profile `TRP-FUN-04`.
+    writer.set_xml_filename("transport_priority_profile.xml");
+    writer.set_datawriter_profile("TRP-FUN-04");
+    writer.init();
+    ASSERT_TRUE(writer.isInitialized());
+    fdds::DataWriter& data_writer = writer.get_native_writer();
+
+    // 2. Get the writer's current QoS into `current_qos` and save the transport priority into `transport_priority_1`.
+    auto current_qos = data_writer.get_qos();
+    int32_t transport_priority_1 = current_qos.transport_priority().value;
+
+    // ----------- Assertions -----------
+
+    // 1. `transport_priority_1` equals `PRIORITY_1`.
+    EXPECT_EQ(transport_priority_1, PRIORITY_1);
+}
+
 #ifdef INSTANTIATE_TEST_SUITE_P
 #define GTEST_INSTANTIATE_TEST_MACRO(x, y, z, w) INSTANTIATE_TEST_SUITE_P(x, y, z, w)
 #else
