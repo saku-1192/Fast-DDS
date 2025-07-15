@@ -161,7 +161,8 @@ namespace filewatch {
 
         std::promise<void> _running;
 
-        std::chrono::time_point<std::chrono::system_clock> last_write_time_;
+        // std::chrono::time_point<std::chrono::system_clock> last_write_time_;
+        std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds > last_write_time_;
         unsigned long last_size_;
 
 #ifdef _WIN32
@@ -514,7 +515,8 @@ namespace filewatch {
 
                 using clock = std::chrono::system_clock;
                 using duration = clock::duration;
-                std::chrono::time_point<clock> current_time;
+                // std::chrono::time_point<clock> current_time;
+                std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds > current_time;
                 current_time += std::chrono::duration_cast<duration>(std::chrono::seconds(result.st_mtim.tv_sec));
                 current_time += std::chrono::duration_cast<duration>(std::chrono::nanoseconds(result.st_mtim.tv_nsec));
 
